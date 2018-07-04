@@ -1,11 +1,11 @@
-	class QueueNode extends Object {
-		constructor (data) {
-			super();
-			this.next = null;
-			this.data = data;
-		}
-		
+class QueueNode extends Object {
+	constructor (data) {
+		super();
+		this.next = null;
+		this.data = data;
 	}
+	
+}
 
 class Queue extends Object {
 
@@ -123,9 +123,14 @@ module.exports.count = function() {
 
 module.exports.take = function(id) {
 	if (assignedSpots[id] === undefined) {
-		assignedSpots[id] = spotQueue.find("id", id); //TODO: error handling!
+		let spot = spotQueue.find("id", id);
+		if (spot !== null) {
+			assignedSpots[id] = spot;
+		}
 	}
-	assignedSpots[id].fill();
+	if (assignedSpots[id] !== undefined) {
+		assignedSpots[id].fill();
+	}
 }
 
 
