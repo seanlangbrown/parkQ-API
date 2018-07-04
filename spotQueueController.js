@@ -51,11 +51,14 @@ class Spot extends Object {
 		this.id = id;
 		this.assignedAt = null;
 		this.type = 1;
+		this.empty = true;
 	}
 
-	assign(time) {
-		this.assignedAt = time;
+	assign() { //timeout, reset) {
+		this.assignedAt = Date.now();
 	}
+
+
 
 	json() {
 		return {
@@ -74,7 +77,8 @@ module.exports.assign = function() {
 	if (openSpot === null) {
 		return {};
 	}
-	openSpot.assign(Date.now());
+	openSpot.assign(); //300, spotQueue);
+	//assignedSpots[openSpot.id] = openSpot;
 	return openSpot.json();
 }
 
