@@ -1,0 +1,30 @@
+{
+  "name": "parkq-api",
+  "version": "1.0.0",
+  "description": "ParkQ is a system for assigning parking spaces in a garage. The parkQ API allows clients to get an available parking space, and post a parking space that is available",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "run-dev": "nodemon index.js",
+    "run": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/seanlangbrown/parkQ-API.git"
+  },
+  "author": "Sean Lang-Brown",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/seanlangbrown/parkQ-API/issues"
+  },
+  "homepage": "https://github.com/seanlangbrown/parkQ-API#readme",
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "express": "^4.16.3",
+    "lodash": "^4.17.10",
+    "node": "^10.5.0"
+  },
+  "devDependencies": {
+    "nodemon": "^1.17.5"
+  }
+}
