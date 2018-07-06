@@ -46,7 +46,7 @@ describe ('Queue Controller', () => {
 	});
 
 
-	test('It should assign spaces in the order released', () => {
+	test('It should assign spaces in the order released', async () => {
 
 
 
