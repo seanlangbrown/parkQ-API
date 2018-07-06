@@ -1,7 +1,6 @@
 const supertest = require('supertest');
 const fs = require('fs');
-const mockery = require('mockery');
-const mocked = require('./mockController');
+//const mocked = await require('./mockController');
 const spotQueueController = require('./spotQueueController.js');
 const spacesAPI = require('./indexApp.js');
 
@@ -13,52 +12,49 @@ describe ('API Endpoints', () => {
 	let superAPI;
 
 	let spotOne;
+
+	let app;
 	
 	beforeEach( async () => {
 
 		//initialize new mockQueueController
-
-		mockController = new mocked(spotQueueController);
-
-		mockery.enable({
-			warnOnUnregistered: false,
-			warnOnReplace: false
-		});
-
-		mockery.registerMock('./spotQueueController.js', mockController);
-		superAPI = supertest(spacesAPI);
+		//app = spacesAPI.listen()
+		
+		superAPI = await supertest.agent(spacesAPI.listen());
 
 		spotOne = {};
 
 	});
 
 	afterEach( async () => {
-
-		mockery.disable();
 	});
 
 
-	test('It should respond to the /spaces path with ___ when no spaces are available', async() => {
-		mockController.setYield('assign', null); //?what to return if non available
+	test('It should respond to the /spaces path with status 200 and id:null when no spaces are available', async () => {
+		//mockController.setYield('assign', {id: null}); //?what to return if non available
+		spotQueueController.assign = jest.spyOn(spotQueueController, 'assign');
+		spotQueueController.assign.mockImplementation(() => ({id: null}));
 
-		const availableSpace = await superAPI.get('/space');
+		let availableSpace = await superAPI.get('/space');
 
-		expect(availableSpace.statusCode).toBe(401); //error or not?
+		expect(availableSpace.statusCode).toBe(200); //error or not?
 
-		expect(mockController.called.assign.count).toBe(1);
+		expect(spotQueueController.assign).toHaveBeenCalled();
 
 	});
 
 
 	test('It should respond to posting to the /create path with success and create a space', async() => {
 
-		mockController.setYield('create', true);
+		//mockController.setYield('create', true);
+		spotQueueController.create = jest.spyOn(spotQueueController, 'create');
+		spotQueueController.create.mockImplementation(() => (true));
 
-		const createdSpace = await superAPI.post('/create'); //how to post data?
+		let createdSpace = await superAPI.post('/space/create'); //how to post data?
 
 		expect(createdSpace.statusCode).toBe(201);
 
-		expect(mockController.called.create.args[0]).toEqual([spotOne]);
+		expect(spotQueueController.create).toHaveBeenCalledWith(spotOne);
 
 	});
 
@@ -66,9 +62,11 @@ describe ('API Endpoints', () => {
 
 		//put spotOne in spotQueueHandlerMock
 
-		mockController.setYield('assign', spotOne); //?what to return if non available
+		//mockController.setYield('assign', spotOne); //?what to return if non available
+		spotQueueController.assign = jest.spyOn(spotQueueController, 'assign');
+		spotQueueController.assign.mockImplementation(() => (spotOne));
 
-		const availableSpace = await superAPI.get('/space');
+		let availableSpace = await superAPI.get('/space');
 
 		expect(availableSpace.statusCode).toBe(200);
 
@@ -81,61 +79,46 @@ describe ('API Endpoints', () => {
 	test('It should respond to posting to the /spaces path with success and add a spot to the available queue', async () => {
 
 		//add space 100 to mock queue as taken space
+		spotQueueController.release = jest.spyOn(spotQueueController, 'release');
+		spotQueueController.release.mockImplementation(() => (true));
 
-		mockController.setYield('release', () => (true));
-
-		const postedSpace = await superAPI.post('/space/100');
+		let postedSpace = await superAPI.post('/space/release/100');
 
 		expect(postedSpace.statusCode).toBe(201);
 
-		expect(mockController.called.release.args[0]).toBe([100]);
+		expect(spotQueueController.release).toHaveBeenCalledWith('100');
 	});
 
+	test('It should respond to posting to /spaces/release when the space ID does not exist with an error', async () => {
 
+		spotQueueController.release = jest.spyOn(spotQueueController, 'release');
+		spotQueueController.release.mockImplementation(() => (false));
 
+		spotQueueController.isSpace = jest.spyOn(spotQueueController, 'isSpace');
+		spotQueueController.isSpace.mockImplementation(() => (false));
 
-	test('It should respond to posting to /spaces when the space ID does not exist with an error', async () => {
-
-		mockController.setYield('release', () => (false));
-
-		const postedSpace = await superAPI.post('/space/999');
+		let postedSpace = await superAPI.post('/space/release/999');
 
 		expect(postedSpace.statusCode).toBe(401); //or another error code
 
-		expect(mockController.called.release.args[0]).toBe([999])
-
+		expect(spotQueueController.release).toHaveBeenCalledWith('999');
 
 	});
 
 
-
-	test('It should respond to posting to /fill path by taking a space', async () => {
+	test('It should respond to posting to /take path by taking a space', async () => {
 
 		//create space 100, as assigned;
 
-		mockController.setYield('take', () => (true));
+		spotQueueController.take = jest.spyOn(spotQueueController, 'take');
+		spotQueueController.take.mockImplementation(() => (true));
 
-		const postedSpace = await superAPI.post('/fill/100');
-
-		expect(postedSpace.statusCode).toBe(201);
-
-		expect(mockController.called.take.args[0]).toBe([100]);
-	});
-
-
-	test('It should respond to posting to /fill path when spot is already full by taking a space', async () => {
-
-		//**this test may not be appropriate here** should controller handle already filled same as currently filled?**//
-
-		mockController.setYield('take', () => (true));
-
-		const postedSpace = await superAPI.post('/fill/101');
+		let postedSpace = await superAPI.post('/space/take/100');
 
 		expect(postedSpace.statusCode).toBe(201);
 
-		expect(mockController.called.take.args[0]).toBe([101]);
+		expect(spotQueueController.take).toHaveBeenCalledWith('100');
 	});
-
 
 
 });

@@ -1,5 +1,5 @@
 const express = require('express');
-const _ = require('lodash');
+//const _ = require('lodash');
 const path = require('path');
 const spotQ = require('./spotQueueHandler.js');
 
