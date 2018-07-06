@@ -1,6 +1,6 @@
 
 const mocked = require('./mockController.js');
-const _ = require('lodash');
+const _ = require('underscore');
 
 
 describe('mocking an object', () => {
