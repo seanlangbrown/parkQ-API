@@ -1,8 +1,4 @@
-const express = require('express');
-const _ = require('lodash');
-const path = require('path');
-const spotQ = require('./spotQueueHandler.js');
-const app = express();
+const app = require('./serverApp.js');
 const PORT = process.env.PORT || '3000';
 
 
