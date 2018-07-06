@@ -1,31 +1,38 @@
 const supertest = require('supertest');
 const fs = require('fs');
 const mockery = require('mockery');
-const mockController = require('./mockController');
+const mocked = require('./mockController');
 const spotQueueController = require('./spotQueueController.js');
+const spacesAPI = require('./indexApp.js');
 
 
 describe ('API Endpoints', () => {
 
+	let mockController;
+
+	let superAPI;
+
+	let spotOne;
 	
-	beforeAll( async () => {
+	beforeEach( async () => {
 
 		//initialize new mockQueueController
 
-		let mockController = new mockController(spotQueueController);
+		mockController = new mocked(spotQueueController);
 
 		mockery.enable({
-			warnOnUnregistered: false
+			warnOnUnregistered: false,
+			warnOnReplace: false
 		});
 
 		mockery.registerMock('./spotQueueController.js', mockController);
-		let superAPI = supertest(spacesAPI);
+		superAPI = supertest(spacesAPI);
 
-		let spotOne = {};
+		spotOne = {};
 
 	});
 
-	afterAll( async () => {
+	afterEach( async () => {
 
 		mockery.disable();
 	});
@@ -45,11 +52,11 @@ describe ('API Endpoints', () => {
 
 	test('It should respond to posting to the /create path with success and create a space', async() => {
 
-		mockController.setYield('create', () => ());
+		mockController.setYield('create', true);
 
 		const createdSpace = await superAPI.post('/create'); //how to post data?
 
-		expect(requestedSpace.statusCode.toBe(201));
+		expect(createdSpace.statusCode).toBe(201);
 
 		expect(mockController.called.create.args[0]).toEqual([spotOne]);
 
@@ -59,13 +66,13 @@ describe ('API Endpoints', () => {
 
 		//put spotOne in spotQueueHandlerMock
 
-		mockController.setYield('assign', spaceOne); //?what to return if non available
+		mockController.setYield('assign', spotOne); //?what to return if non available
 
 		const availableSpace = await superAPI.get('/space');
 
 		expect(availableSpace.statusCode).toBe(200);
 
-		expect(availableSpace.text.toEqual(spotOne));
+		expect(availableSpace.text).toEqual(JSON.stringify(spotOne));
 
 	});
 
@@ -110,10 +117,10 @@ describe ('API Endpoints', () => {
 
 		const postedSpace = await superAPI.post('/fill/100');
 
-		expect(postedSpace.statusCode.toBe(201));
+		expect(postedSpace.statusCode).toBe(201);
 
 		expect(mockController.called.take.args[0]).toBe([100]);
-	}
+	});
 
 
 	test('It should respond to posting to /fill path when spot is already full by taking a space', async () => {
@@ -122,12 +129,12 @@ describe ('API Endpoints', () => {
 
 		mockController.setYield('take', () => (true));
 
-		const postedSpace = await superAPI.psot('/fill/101');
+		const postedSpace = await superAPI.post('/fill/101');
 
-		expect(postedSpace.statusCode.toBe(201));
+		expect(postedSpace.statusCode).toBe(201);
 
 		expect(mockController.called.take.args[0]).toBe([101]);
-	}
+	});
 
 
 
