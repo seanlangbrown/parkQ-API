@@ -77,7 +77,7 @@ class Spot extends Object {
 		this.empty = true;
 	}
 
-	assign() { //timeout, reset) {
+	assign () { //timeout, reset) {
 		this.assignedAt = Date.now();
 	}
 
@@ -90,7 +90,7 @@ class Spot extends Object {
 		this.assignedAt = null;
 	}
 
-	json() {
+	json () {
 		return {
 			id: this.id,
 			type : this.type,
@@ -103,45 +103,76 @@ const spotQueue = new Queue();
 const assignedSpots = {};
 
 module.exports.assign = function() {
-	let openSpot = spotQueue.get()
-	if (openSpot === null) {
-		return {};
-	}
-	openSpot.assign(); //300, spotQueue);
-	assignedSpots[openSpot.id] = openSpot;
-	return openSpot.json();
+	return new Promise((resolve, reject) => {
+		let openSpot = spotQueue.get()
+		if (openSpot === null) {
+			return {};
+		}
+		openSpot.assign(); //300, spotQueue);
+		assignedSpots[openSpot.id] = openSpot;
+		return openSpot.json();
+	});
 }
 
 module.exports.view = function() {
-	let emptySpots = spotQueue.toArray();
-	return emptySpots;
+	return new Promise((resolve, reject) => {
+		let emptySpots = spotQueue.toArray();
+		return emptySpots;
+	});
 }
 
 module.exports.count = function() {
-	return spotQueue.length;
+	return new Promise((resolve, reject) => {
+		return spotQueue.length;
+	});
 }
 
 module.exports.take = function(id) {
-	if (assignedSpots[id] === undefined) {
-		let spot = spotQueue.find("id", id);
-		if (spot !== null) {
-			assignedSpots[id] = spot;
+	return new Promise((resolve, reject) => {
+		if (assignedSpots[id] === undefined) {
+			let spot = spotQueue.find("id", id);
+			if (spot !== null) {
+				assignedSpots[id] = spot;
+			}
 		}
-	}
-	if (assignedSpots[id] !== undefined) {
-		assignedSpots[id].fill();
-	}
+		if (assignedSpots[id] !== undefined) {
+			assignedSpots[id].fill();
+			resolve(true);
+		}
+		resolve(false);
+	});
+}
+
+module.exports.isSpace = function(id) {
+	return new Promise((resolve, reject) => {
+		if (assignedSpots[id] === undefined) {
+			if (spotQueue.find('id', id) === null) {
+				resolve(false);
+			}
+		}
+		resolve(true);
+	});
+}
+
+module.exports.create = function(newSpot) {
+	return new Promise((resolve, reject) => {
+		resolve(true);
+	});
 }
 
 
 module.exports.release = function(id) {
-	let openSpot;
-	if (assignedSpots[id] !== undefined) {
-		openSpot = assignedSpots[id];
-		delete assignedSpots[id];
-	} else {
-		openSpot = new Spot(id);
-	}
-	openSpot.release();
-	spotQueue.put(openSpot);
+	return new Promise((resolve, reject) => {
+		let openSpot;
+		console.log('releasing space');
+		if (assignedSpots[id] !== undefined) {
+			openSpot = assignedSpots[id];
+			delete assignedSpots[id];
+		} else {
+			resolve(false);
+		}
+		openSpot.release();
+		spotQueue.put(openSpot);
+		resolve(true);
+	});
 }
