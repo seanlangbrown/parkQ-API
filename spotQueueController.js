@@ -27,14 +27,42 @@ class Queue extends Object {
 
 		this.length++;
 	}
-
-	get (item) {
+	get ()  {
 		if (!this.head) {
 			return null;
 		}
 		let dequed = this.head;
-		if (this.head.next) {
+		if (this.head.next !== null) {
 			this.head = this.head.next;
+		} else {
+			this.head = null;
+			this.tail = null;
+		}
+		return dequed;
+	}
+
+	geti (position) {
+		if (!this.head || position >= this.length) {
+			return null;
+		}
+		let dequed = this.head;
+		let prev;
+		let i = 0;
+		while(position !== null && i < position) {
+			prev = dequed;
+			dequed	= dequed.next;
+		}
+
+		if (dequed === this.head) {
+			if (this.head.next) {
+				this.head = this.head.next;
+				this.head.next = null;
+			}
+		} else {
+			if (dequed.next) {
+				prev.next = dequed.next
+				dequed.next = null;
+			}
 		}
 		this.length--;
 		return dequed.data;
@@ -51,14 +79,13 @@ class Queue extends Object {
 	}
 
 	find (property, value) {
-		let foundItem = null;
+		let foundItem = -1;
 		for (var i = 0; i < this.length; i++) {
 			let item = this.get();
 			if (item[property] === value) {
-				foundItem = item;
-			} else {
-				this.put(item);
+				foundItem = i;
 			}
+			this.put(item);
 		}
 		return foundItem;
 	}
@@ -75,6 +102,16 @@ class Spot extends Object {
 		this.assignedAt = null;
 		this.type = 1;
 		this.empty = true;
+		this._attributes = {};
+	}
+
+	attributes(name, value) {
+		if (value !== undefined) {
+			this._attributes[name] = value;
+			return;
+		} else {
+			return this._attributes[name];
+		}
 	}
 
 	assign () { //timeout, reset) {
@@ -94,44 +131,68 @@ class Spot extends Object {
 		return {
 			id: this.id,
 			type : this.type,
-			time: this.assignedAt
+			time: this.assignedAt,
+			attributes: this._attributes
 		}
 	}
 }
 
-const spotQueue = new Queue();
-const assignedSpots = {};
+let spotQueue = new Queue();
+let assignedSpots = {};
+let id = 0;
+
+let nextId = function() {
+	let newid = id;
+	id++;
+	return newid;
+}
+
+module.exports.connect = function () {
+	return new Promise((resolve, reject) => {
+		resolve(true);
+	});
+}
+
+module.exports.disconnect = function() {
+	return new Promise((resolve, reject) => {
+		spotQueue = new Queue();
+		assignedSpots = {};
+		id = 0;
+		resolve(true);
+	});
+}
 
 module.exports.assign = function() {
 	return new Promise((resolve, reject) => {
-		let openSpot = spotQueue.get()
+		let openSpot = spotQueue.get();
 		if (openSpot === null) {
-			return {};
+			resolve({});
 		}
 		openSpot.assign(); //300, spotQueue);
 		assignedSpots[openSpot.id] = openSpot;
-		return openSpot.json();
+		resolve(openSpot.json());
 	});
 }
 
 module.exports.view = function() {
 	return new Promise((resolve, reject) => {
-		let emptySpots = spotQueue.toArray();
-		return emptySpots;
+		let emptySpots = spotQueue.toArray().map((spot) => (spot.json()));
+		resolve(emptySpots);
 	});
 }
 
 module.exports.count = function() {
 	return new Promise((resolve, reject) => {
-		return spotQueue.length;
+		resolve(spotQueue.length);
 	});
 }
 
 module.exports.take = function(id) {
 	return new Promise((resolve, reject) => {
 		if (assignedSpots[id] === undefined) {
-			let spot = spotQueue.find("id", id);
-			if (spot !== null) {
+			let spotPosition = spotQueue.find("id", id);
+			if (spotPosition !== null) {
+				spot = spotQueue.geti(spotPosition);
 				assignedSpots[id] = spot;
 			}
 		}
@@ -145,8 +206,9 @@ module.exports.take = function(id) {
 
 module.exports.isSpace = function(id) {
 	return new Promise((resolve, reject) => {
+		console.log('searching', assignedSpots, ', ', spotQueue);
 		if (assignedSpots[id] === undefined) {
-			if (spotQueue.find('id', id) === null) {
+			if (spotQueue.find('id', id) === -1) {
 				resolve(false);
 			}
 		}
@@ -156,7 +218,12 @@ module.exports.isSpace = function(id) {
 
 module.exports.create = function(newSpot) {
 	return new Promise((resolve, reject) => {
-		resolve(true);
+		let spot = new Spot(nextId());
+		for (let key in newSpot) {
+			spot.attributes(key, newSpot[key]);
+		}
+		spotQueue.put(spot);
+		resolve({'id': spot.id, 'success': true});
 	});
 }
 
