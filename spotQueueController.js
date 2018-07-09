@@ -38,34 +38,29 @@ class Queue extends Object {
 			this.head = null;
 			this.tail = null;
 		}
-		return dequed;
+		this.length--;
+		return dequed.data;
 	}
 
 	geti (position) {
-		if (!this.head || position >= this.length) {
-			return null;
+		if (position === 0) {
+			return this.get();
 		}
-		let dequed = this.head;
-		let prev;
-		let i = 0;
-		while(position !== null && i < position) {
-			prev = dequed;
-			dequed	= dequed.next;
-		}
-
-		if (dequed === this.head) {
-			if (this.head.next) {
-				this.head = this.head.next;
-				this.head.next = null;
-			}
-		} else {
-			if (dequed.next) {
-				prev.next = dequed.next
-				dequed.next = null;
+		let dequed = null;
+		for (let i = 0; i < this.length; i++) {
+			let node = this.get();
+			if (i === position) {
+				dequed = node;
+			} else {
+				this.put(node);
 			}
 		}
 		this.length--;
-		return dequed.data;
+		if (dequed !== null) {
+			return dequed.data;
+		} else {
+			return null;
+		}
 	}
 
 	toArray () {
@@ -191,12 +186,14 @@ module.exports.take = function(id) {
 	return new Promise((resolve, reject) => {
 		if (assignedSpots[id] === undefined) {
 			let spotPosition = spotQueue.find("id", id);
+			//console.log('found', spotPosition);
 			if (spotPosition !== null) {
 				spot = spotQueue.geti(spotPosition);
+				//console.log('spot is', spot);
 				assignedSpots[id] = spot;
 			}
 		}
-		if (assignedSpots[id] !== undefined) {
+		if (assignedSpots[id] !== undefined && assignedSpots[id] !== null) {
 			assignedSpots[id].fill();
 			resolve(true);
 		}
@@ -206,7 +203,7 @@ module.exports.take = function(id) {
 
 module.exports.isSpace = function(id) {
 	return new Promise((resolve, reject) => {
-		console.log('searching', assignedSpots, ', ', spotQueue);
+		//console.log('searching', assignedSpots, ', ', spotQueue);
 		if (assignedSpots[id] === undefined) {
 			if (spotQueue.find('id', id) === -1) {
 				resolve(false);
@@ -231,7 +228,7 @@ module.exports.create = function(newSpot) {
 module.exports.release = function(id) {
 	return new Promise((resolve, reject) => {
 		let openSpot;
-		console.log('releasing space');
+		//console.log('releasing space');
 		if (assignedSpots[id] !== undefined) {
 			openSpot = assignedSpots[id];
 			delete assignedSpots[id];
